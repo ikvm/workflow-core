@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading.Tasks;
 using WorkflowCore.Interface;
 
 namespace WorkflowCore.Models
@@ -12,21 +10,33 @@ namespace WorkflowCore.Models
     {
         public abstract Type BodyType { get; }
 
-        public int Id { get; set; }
+        public virtual int Id { get; set; }
 
-        public string Name { get; set; }
+        public virtual string Name { get; set; }
 
-        public List<int> Children { get; set; } = new List<int>();
+        public virtual string Tag { get; set; }
 
-        public List<StepOutcome> Outcomes { get; set; } = new List<StepOutcome>();
+        public virtual List<int> Children { get; set; } = new List<int>();
 
-        public List<DataMapping> Inputs { get; set; } = new List<DataMapping>();
+        public virtual List<StepOutcome> Outcomes { get; set; } = new List<StepOutcome>();
 
-        public List<DataMapping> Outputs { get; set; } = new List<DataMapping>();
+        public virtual List<IStepParameter> Inputs { get; set; } = new List<IStepParameter>();
 
-        public WorkflowErrorHandling? ErrorBehavior { get; set; }
+        public virtual List<IStepParameter> Outputs { get; set; } = new List<IStepParameter>();
 
-        public TimeSpan? RetryInterval { get; set; }                
+        public virtual WorkflowErrorHandling? ErrorBehavior { get; set; }
+
+        public virtual TimeSpan? RetryInterval { get; set; }
+
+        public virtual int? CompensationStepId { get; set; }
+
+        public virtual bool ResumeChildrenAfterCompensation => true;
+
+        public virtual bool RevertChildrenAfterCompensation => false;
+
+        public virtual LambdaExpression CancelCondition { get; set; }
+
+        public bool ProceedOnCancel { get; set; } = false;
 
         public virtual ExecutionPipelineDirective InitForExecution(WorkflowExecutorResult executorResult, WorkflowDefinition defintion, WorkflowInstance workflow, ExecutionPointer executionPointer)
         {
@@ -42,6 +52,10 @@ namespace WorkflowCore.Models
         {            
         }
 
+        public virtual void PrimeForRetry(ExecutionPointer pointer)
+        {
+        }
+
         /// <summary>
         /// Called after every workflow execution round,
         /// every exectuon pointer with no end time, even if this step was not executed in this round
@@ -52,6 +66,7 @@ namespace WorkflowCore.Models
         /// <param name="executionPointer"></param>
         public virtual void AfterWorkflowIteration(WorkflowExecutorResult executorResult, WorkflowDefinition defintion, WorkflowInstance workflow, ExecutionPointer executionPointer)
         {
+            
         }
 
         public virtual IStepBody ConstructBody(IServiceProvider serviceProvider)
@@ -67,15 +82,16 @@ namespace WorkflowCore.Models
         }
     }
 
-    public enum ExecutionPipelineDirective { Next = 0, Defer = 1, EndWorkflow = 2 }
-
     public class WorkflowStep<TStepBody> : WorkflowStep
         where TStepBody : IStepBody 
     {
         public override Type BodyType => typeof(TStepBody);
     }
 
-    
-
-
+	public enum ExecutionPipelineDirective 
+    { 
+        Next = 0, 
+        Defer = 1, 
+        EndWorkflow = 2 
+    }
 }

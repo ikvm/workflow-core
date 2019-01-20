@@ -25,6 +25,28 @@ public class MyWorkflow : IWorkflow
 }
 ```
 
+## JSON Workflow Definitions
+
+Define your workflows in JSON
+
+```json
+{
+  "Id": "HelloWorld",
+  "Version": 1,
+  "Steps": [
+    {
+      "Id": "Hello",
+      "StepType": "MyApp.HelloWorld, MyApp",
+      "NextStepId": "Bye"
+    },        
+    {
+      "Id": "Bye",
+      "StepType": "MyApp.GoodbyeWorld, MyApp"
+    }
+  ]
+}
+```
+
 ### Sample use cases
 
 * New user workflow
@@ -53,7 +75,7 @@ public class MyWorkflow : IWorkflow
 }
 ```
 
-* Resilient service orchestration
+* Saga Transactions
 
 ```c#
 public class MyWorkflow : IWorkflow
@@ -70,6 +92,21 @@ public class MyWorkflow : IWorkflow
 }
 ```
 
+```c#
+builder
+    .StartWith<LogStart>()
+    .Saga(saga => saga
+        .StartWith<Task1>()
+            .CompensateWith<UndoTask1>()
+        .Then<Task2>()
+            .CompensateWith<UndoTask2>()
+        .Then<Task3>()
+            .CompensateWith<UndoTask3>()
+    )
+    .OnError(Models.WorkflowErrorHandling.Retry, TimeSpan.FromMinutes(10))
+    .Then<LogEnd>();
+```
+
 ## Persistence
 
 Since workflows are typically long running processes, they will need to be persisted to storage between steps.
@@ -77,10 +114,17 @@ There are several persistence providers available as separate Nuget packages.
 
 * MemoryPersistenceProvider *(Default provider, for demo and testing purposes)*
 * [MongoDB](src/providers/WorkflowCore.Persistence.MongoDB)
+* [Amazon DynamoDB](src/providers/WorkflowCore.Providers.AWS)
 * [SQL Server](src/providers/WorkflowCore.Persistence.SqlServer)
 * [PostgreSQL](src/providers/WorkflowCore.Persistence.PostgreSQL)
 * [Sqlite](src/providers/WorkflowCore.Persistence.Sqlite)
 * Redis *(coming soon...)*
+
+## Search
+
+A search index provider can be plugged in to Workflow Core, enabling you to index your workflows and search against the data and state of them.
+These are also available as separate Nuget packages.
+* [Elasticsearch](src/providers/WorkflowCore.Providers.Elasticsearch)
 
 ## Extensions
 
@@ -106,6 +150,14 @@ There are several persistence providers available as separate Nuget packages.
 
 * [Parallel Tasks](src/samples/WorkflowCore.Sample13)
 
+* [Saga Transactions (with compensation)](src/samples/WorkflowCore.Sample17)
+
+* [Scheduled Background Tasks](src/samples/WorkflowCore.Sample16)
+
+* [Recurring Background Tasks](src/samples/WorkflowCore.Sample14)
+
+* [Dependency Injection](src/samples/WorkflowCore.Sample15)
+
 * [Deferred execution & re-entrant steps](src/samples/WorkflowCore.Sample05)
 
 * [Looping](src/samples/WorkflowCore.Sample02)
@@ -117,9 +169,12 @@ There are several persistence providers available as separate Nuget packages.
 * [Testing](src/samples/WorkflowCore.TestSample01)
 
 
-## Authors
+## Contributors
 
 * **Daniel Gerlag** - *Initial work*
+* **Jackie Ja**
+* **Aaron Scribnor**
+* **Roberto Paterlini**
 
 ## Ports
 

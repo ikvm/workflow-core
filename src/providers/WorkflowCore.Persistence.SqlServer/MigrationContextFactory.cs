@@ -1,16 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace WorkflowCore.Persistence.SqlServer
 {
-    public class MigrationContextFactory : IDbContextFactory<SqlServerPersistenceProvider>
+    public class MigrationContextFactory : IDesignTimeDbContextFactory<SqlServerContext>
     {
-        public SqlServerPersistenceProvider Create(DbContextFactoryOptions options)
+        public SqlServerContext CreateDbContext(string[] args)
         {
-            return new SqlServerPersistenceProvider(@"Server=.;Database=WorkflowCore;Trusted_Connection=True;", true, true);
+            return new SqlServerContext(@"Server=.;Database=WorkflowCore;Trusted_Connection=True;");
         }
     }
 }

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Text;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
 
@@ -25,12 +22,10 @@ namespace WorkflowCore.Primitives
             {
                 if ((context.PersistenceData as ControlPersistenceData).ChildrenActive)
                 {
-                    bool complete = true;
-                    foreach (var childId in context.ExecutionPointer.Children)
-                        complete = complete && IsBranchComplete(context.Workflow.ExecutionPointers, childId);
-
-                    if (complete)
+                    if (context.Workflow.IsBranchComplete(context.ExecutionPointer.Id))
+                    {
                         return ExecutionResult.Next();
+                    }
                 }
             }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using WorkflowCore.Models;
 
@@ -18,6 +17,7 @@ namespace WorkflowCore.Interface
 
         Task<IEnumerable<string>> GetRunnableInstances(DateTime asAt);
 
+        [Obsolete]
         Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(WorkflowStatus? status, string type, DateTime? createdFrom, DateTime? createdTo, int skip, int take);
 
         Task<WorkflowInstance> GetWorkflowInstance(string Id);

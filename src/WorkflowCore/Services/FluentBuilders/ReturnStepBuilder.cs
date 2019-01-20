@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
-using WorkflowCore.Primitives;
 
 namespace WorkflowCore.Services
 {
@@ -30,7 +24,7 @@ namespace WorkflowCore.Services
         public IStepBuilder<TData, TParentStep> Do(Action<IWorkflowBuilder<TData>> builder)
         {
             builder.Invoke(WorkflowBuilder);
-            Step.Children.Add(Step.Id + 1); //TODO: make more elegant                        
+            Step.Children.Add(Step.Id + 1); //TODO: make more elegant
 
             return _referenceBuilder;
         }

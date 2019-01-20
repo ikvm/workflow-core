@@ -8,17 +8,33 @@ using WorkflowCore.Models;
 
 namespace WorkflowCore.Services
 {
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+
     /// <summary>
     /// In-memory implementation of IPersistenceProvider for demo and testing purposes
     /// </summary>
     public class MemoryPersistenceProvider : IPersistenceProvider
     {
+        private static readonly ConcurrentDictionary<string, Tuple<List<WorkflowInstance>, List<EventSubscription>, List<Event>, List<ExecutionError>>> Environments = 
+                            new ConcurrentDictionary<string, Tuple<List<WorkflowInstance>, List<EventSubscription>, List<Event>, List<ExecutionError>>>();
+        private readonly List<WorkflowInstance> _instances;
+        private readonly List<EventSubscription> _subscriptions;
+        private readonly List<Event> _events;
+        private readonly List<ExecutionError> _errors;
 
-        private static List<WorkflowInstance> _instances = new List<WorkflowInstance>();
-        private static List<EventSubscription> _subscriptions = new List<EventSubscription>();
-        private static List<Event> _events = new List<Event>();
-        private static List<ExecutionError> _errors = new List<ExecutionError>();
+        public MemoryPersistenceProvider()
+            : this("")
+        {
+        }
+
+        public MemoryPersistenceProvider(string environmentKey)
+        {
+            var environment = Environments.GetOrAdd(environmentKey, _ => Tuple.Create(new List<WorkflowInstance>(), new List<EventSubscription>(), new List<Event>(), new List<ExecutionError>()));
+            _instances = environment.Item1;
+            _subscriptions = environment.Item2;
+            _events = environment.Item3;
+            _errors = environment.Item4;
+        }
 
         public async Task<string> CreateNewWorkflow(WorkflowInstance workflow)
         {
@@ -64,16 +80,24 @@ namespace WorkflowCore.Services
                 var result = _instances.AsQueryable();
 
                 if (status.HasValue)
+                {
                     result = result.Where(x => x.Status == status.Value);
+                }
 
                 if (!String.IsNullOrEmpty(type))
+                {
                     result = result.Where(x => x.WorkflowDefinitionId == type);
+                }
 
                 if (createdFrom.HasValue)
+                {
                     result = result.Where(x => x.CreateTime >= createdFrom.Value);
+                }
 
                 if (createdTo.HasValue)
+                {
                     result = result.Where(x => x.CreateTime <= createdTo.Value);
+                }
 
                 return result.Skip(skip).Take(take).ToList();
             }
@@ -157,10 +181,10 @@ namespace WorkflowCore.Services
             lock (_events)
             {
                 return _events
-                .Where(x => x.EventName == eventName && x.EventKey == eventKey)
-                .Where(x => x.EventTime >= asOf)
-                .Select(x => x.Id)
-                .ToList();
+                    .Where(x => x.EventName == eventName && x.EventKey == eventKey)
+                    .Where(x => x.EventTime >= asOf)
+                    .Select(x => x.Id)
+                    .ToList();
             }
         }
 
@@ -170,7 +194,9 @@ namespace WorkflowCore.Services
             {
                 var evt = _events.FirstOrDefault(x => x.Id == id);
                 if (evt != null)
+                {
                     evt.IsProcessed = false;
+                }
             }
         }
 
@@ -182,5 +208,6 @@ namespace WorkflowCore.Services
             }
         }
     }
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+
+    #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 }

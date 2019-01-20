@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Linq.Expressions;
-using WorkflowCore.Interface;
 using WorkflowCore.Models;
 using WorkflowCore.Primitives;
 
@@ -79,13 +78,27 @@ namespace WorkflowCore.Interface
         IStepBuilder<TData, TStepBody> Input<TInput>(Expression<Func<TStepBody, TInput>> stepProperty, Expression<Func<TData, IStepExecutionContext, TInput>> value);
 
         /// <summary>
+        /// Manipulate properties on the step before its executed.
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> Input(Action<TStepBody, TData> action);
+
+        /// <summary>
         /// Map properties on the workflow data object to properties on the step after the step executes
         /// </summary>
         /// <typeparam name="TOutput"></typeparam>
         /// <param name="dataProperty">Property on the data object</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        IStepBuilder<TData, TStepBody> Output<TOutput>(Expression<Func<TData, TOutput>> dataProperty, Expression<Func<TStepBody, TOutput>> value);
+        IStepBuilder<TData, TStepBody> Output<TOutput>(Expression<Func<TData, TOutput>> dataProperty, Expression<Func<TStepBody, object>> value);
+
+        /// <summary>
+        /// Manipulate properties on the data object after the step executes
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> Output(Action<TStepBody, TData> action);
 
         /// <summary>
         /// Wait here until to specified event is published
@@ -93,8 +106,9 @@ namespace WorkflowCore.Interface
         /// <param name="eventName">The name used to identify the kind of event to wait for</param>
         /// <param name="eventKey">A specific key value within the context of the event to wait for</param>
         /// <param name="effectiveDate">Listen for events as of this effective date</param>
+        /// <param name="cancelCondition">A conditon that when true will cancel this WaitFor</param>
         /// <returns></returns>
-        IStepBuilder<TData, WaitFor> WaitFor(string eventName, Expression<Func<TData, string>> eventKey, Expression<Func<TData, DateTime>> effectiveDate = null);
+        IStepBuilder<TData, WaitFor> WaitFor(string eventName, Expression<Func<TData, string>> eventKey, Expression<Func<TData, DateTime>> effectiveDate = null, Expression<Func<TData, bool>> cancelCondition = null);
 
         /// <summary>
         /// Wait here until to specified event is published
@@ -102,9 +116,10 @@ namespace WorkflowCore.Interface
         /// <param name="eventName">The name used to identify the kind of event to wait for</param>
         /// <param name="eventKey">A specific key value within the context of the event to wait for</param>
         /// <param name="effectiveDate">Listen for events as of this effective date</param>
+        /// <param name="cancelCondition">A conditon that when true will cancel this WaitFor</param>
         /// <returns></returns>
-        IStepBuilder<TData, WaitFor> WaitFor(string eventName, Expression<Func<TData, IStepExecutionContext, string>> eventKey, Expression<Func<TData, DateTime>> effectiveDate = null);
-
+        IStepBuilder<TData, WaitFor> WaitFor(string eventName, Expression<Func<TData, IStepExecutionContext, string>> eventKey, Expression<Func<TData, DateTime>> effectiveDate = null, Expression<Func<TData, bool>> cancelCondition = null);
+        
         IStepBuilder<TData, TStep> End<TStep>(string name) where TStep : IStepBody;
 
         /// <summary>
@@ -163,6 +178,12 @@ namespace WorkflowCore.Interface
         IParallelStepBuilder<TData, Sequence> Parallel();
 
         /// <summary>
+        /// Execute a sequence of steps in a container
+        /// </summary>
+        /// <returns></returns>
+        IStepBuilder<TData, Sequence> Saga(Action<IWorkflowBuilder<TData>> builder);
+
+        /// <summary>
         /// Schedule a block of steps to execute in parallel sometime in the future
         /// </summary>
         /// <param name="time">The time span to wait before executing the block</param>
@@ -176,5 +197,43 @@ namespace WorkflowCore.Interface
         /// <param name="until">Resolves a condition to stop the recurring task</param>
         /// <returns></returns>
         IContainerStepBuilder<TData, Recur, TStepBody> Recur(Expression<Func<TData, TimeSpan>> interval, Expression<Func<TData, bool>> until);
+
+
+        /// <summary>
+        /// Undo step if unhandled exception is thrown by this step
+        /// </summary>
+        /// <typeparam name="TStep">The type of the step to execute</typeparam>
+        /// <param name="stepSetup">Configure additional parameters for this step</param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> CompensateWith<TStep>(Action<IStepBuilder<TData, TStep>> stepSetup = null) where TStep : IStepBody;
+
+        /// <summary>
+        /// Undo step if unhandled exception is thrown by this step
+        /// </summary>
+        /// <param name="body"></param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> CompensateWith(Func<IStepExecutionContext, ExecutionResult> body);
+
+        /// <summary>
+        /// Undo step if unhandled exception is thrown by this step
+        /// </summary>
+        /// <param name="body"></param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> CompensateWith(Action<IStepExecutionContext> body);
+
+        /// <summary>
+        /// Undo step if unhandled exception is thrown by this step
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> CompensateWithSequence(Action<IWorkflowBuilder<TData>> builder);
+
+        /// <summary>
+        /// Prematurely cancel the execution of this step on a condition
+        /// </summary>
+        /// <param name="cancelCondition"></param>
+        /// <returns></returns>
+        IStepBuilder<TData, TStepBody> CancelCondition(Expression<Func<TData, bool>> cancelCondition, bool proceedAfterCancel = false);
+        
     }
 }

@@ -1,14 +1,14 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using WorkflowCore.Persistence.PostgreSQL;
 using WorkflowCore.Models;
 
 namespace WorkflowCore.Persistence.PostgreSQL.Migrations
 {
-    [DbContext(typeof(PostgresPersistenceProvider))]
+    [DbContext(typeof(PostgresContext))]
     [Migration("20170312161610_Events")]
     partial class Events
     {

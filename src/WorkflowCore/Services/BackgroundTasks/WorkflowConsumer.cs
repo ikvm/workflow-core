@@ -12,17 +12,19 @@ namespace WorkflowCore.Services.BackgroundTasks
     {
         private readonly IDistributedLockProvider _lockProvider;
         private readonly IDateTimeProvider _datetimeProvider;
+        private readonly ISearchIndex _searchIndex;
         private readonly ObjectPool<IPersistenceProvider> _persistenceStorePool;
         private readonly ObjectPool<IWorkflowExecutor> _executorPool;
 
         protected override QueueType Queue => QueueType.Workflow;
 
-        public WorkflowConsumer(IPooledObjectPolicy<IPersistenceProvider> persistencePoolPolicy, IQueueProvider queueProvider, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, IWorkflowRegistry registry, IDistributedLockProvider lockProvider, IPooledObjectPolicy<IWorkflowExecutor> executorPoolPolicy, IDateTimeProvider datetimeProvider, WorkflowOptions options)
+        public WorkflowConsumer(IPooledObjectPolicy<IPersistenceProvider> persistencePoolPolicy, IQueueProvider queueProvider, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, IWorkflowRegistry registry, IDistributedLockProvider lockProvider, IPooledObjectPolicy<IWorkflowExecutor> executorPoolPolicy, IDateTimeProvider datetimeProvider, ISearchIndex searchIndex, WorkflowOptions options)
             : base(queueProvider, loggerFactory, options)
         {
             _persistenceStorePool = new DefaultObjectPool<IPersistenceProvider>(persistencePoolPolicy);
             _executorPool = new DefaultObjectPool<IWorkflowExecutor>(executorPoolPolicy);
             _lockProvider = lockProvider;
+            _searchIndex = searchIndex;
             _datetimeProvider = datetimeProvider;
         }
 
@@ -44,12 +46,13 @@ namespace WorkflowCore.Services.BackgroundTasks
                             var executor = _executorPool.Get();
                             try
                             {
-                                result = await executor.Execute(workflow, Options);
+                                result = await executor.Execute(workflow);
                             }
                             finally
                             {
                                 _executorPool.Return(executor);
                                 await persistenceStore.PersistWorkflow(workflow);
+                                await _searchIndex.IndexWorkflow(workflow);
                             }
                         }
                     }
@@ -59,7 +62,9 @@ namespace WorkflowCore.Services.BackgroundTasks
                         if ((workflow != null) && (result != null))
                         {
                             foreach (var sub in result.Subscriptions)
+                            {
                                 await SubscribeEvent(sub, persistenceStore);
+                            }
 
                             await persistenceStore.PersistErrors(result.Errors);
 
@@ -102,11 +107,15 @@ namespace WorkflowCore.Services.BackgroundTasks
             try
             {
                 if (!workflow.NextExecution.HasValue)
+                {
                     return;
+                }
 
                 var target = (workflow.NextExecution.Value - _datetimeProvider.Now.ToUniversalTime().Ticks);
                 if (target > 0)
+                {
                     await Task.Delay(TimeSpan.FromTicks(target), cancellationToken);
+                }
 
                 await QueueProvider.QueueWork(workflow.Id, QueueType.Workflow);
             }

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Collections;
+﻿using System.Linq;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Text;
 using WorkflowCore.Exceptions;
 using WorkflowCore.Interface;
 using WorkflowCore.Models;
@@ -22,13 +18,11 @@ namespace WorkflowCore.Primitives
             }
 
             if ((context.PersistenceData is ControlPersistenceData) && ((context.PersistenceData as ControlPersistenceData).ChildrenActive))
-            { 
-                bool complete = true;
-                foreach (var childId in context.ExecutionPointer.Children)
-                    complete = complete && IsBranchComplete(context.Workflow.ExecutionPointers, childId);
-
-                if (complete)
+            {
+                if (context.Workflow.IsBranchComplete(context.ExecutionPointer.Id))
+                {
                     return ExecutionResult.Next();
+                }
                 else
                 {
                     var result = ExecutionResult.Persist(context.PersistenceData);
@@ -42,9 +36,8 @@ namespace WorkflowCore.Primitives
 
         private object GetPreviousOutcome(IStepExecutionContext context)
         {
-            var prevPointer = context.Workflow.ExecutionPointers.First(x => x.Id == context.ExecutionPointer.PredecessorId);
+            var prevPointer = context.Workflow.ExecutionPointers.FindById(context.ExecutionPointer.PredecessorId);
             return prevPointer.Outcome;
         }
-
     }
 }

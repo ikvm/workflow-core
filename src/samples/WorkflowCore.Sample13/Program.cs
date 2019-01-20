@@ -2,6 +2,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WorkflowCore.Interface;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Security.Cryptography;
+using System.Collections.Generic;
 
 namespace WorkflowCore.Sample13
 {
@@ -13,12 +17,14 @@ namespace WorkflowCore.Sample13
 
             //start the workflow host
             var host = serviceProvider.GetService<IWorkflowHost>();
-            host.RegisterWorkflow<ParallelWorkflow, MyData>();
+            var controller = serviceProvider.GetService<IWorkflowController>();
+            controller.RegisterWorkflow<ParallelWorkflow, MyData>();
+
             host.Start();
 
             Console.WriteLine("Starting workflow...");
-            host.StartWorkflow("parallel-sample");            
-
+            controller.StartWorkflow<MyData>("parallel-sample");
+            
             Console.ReadLine();
             host.Stop();
         }
@@ -29,7 +35,7 @@ namespace WorkflowCore.Sample13
             IServiceCollection services = new ServiceCollection();
             services.AddLogging();
             services.AddWorkflow();
-            //services.AddWorkflow(x => x.UseMongoDB(@"mongodb://localhost:27017", "workflow-test002"));
+            //services.AddWorkflow(x => x.UseMongoDB(@"mongodb://localhost:27017", "workflow-test009"));
             //services.AddWorkflow(x => x.UseSqlServer(@"Server=.\SQLEXPRESS;Database=WorkflowCoreTest007;Trusted_Connection=True;", true, true));
             //services.AddWorkflow(x => x.UseSqlite(@"Data Source=wfc001.db;", true));            
 

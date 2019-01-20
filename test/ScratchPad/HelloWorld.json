@@ -1,0 +1,30 @@
+﻿{
+  "Id": "HelloWorld",
+  "Version": 1,
+  "Description": "",
+  "DataType": "ScratchPad.MyDataClass, ScratchPad",
+  "Steps": [
+    {
+      "Id": "Hello",
+      "StepType": "ScratchPad.HelloWorld, ScratchPad",
+      "NextStepId": "Generate"
+    },
+    {
+      "Id": "Generate",
+      "StepType": "ScratchPad.GenerateMessage, ScratchPad",
+      "NextStepId": "Print",
+      "Outputs": { "Value3": "step.Message" }
+    },
+    {
+      "Id": "Print",
+      "StepType": "ScratchPad.PrintMessage, ScratchPad",
+      "NextStepId": "Bye",
+      "Inputs": { "Message": "data.Value3 + \" - \" + DateTime.Now.ToString()" }
+    },    
+    
+    {
+      "Id": "Bye",
+      "StepType": "ScratchPad.GoodbyeWorld, ScratchPad"
+    }
+  ]
+}

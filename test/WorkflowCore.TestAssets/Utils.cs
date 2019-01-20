@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace WorkflowCore.TestAssets
 {
@@ -15,6 +16,17 @@ namespace WorkflowCore.TestAssets
             string str = JsonConvert.SerializeObject(obj, SerializerSettings);
             T result = JsonConvert.DeserializeObject<T>(str);
             return result;
+        }
+
+        public static string GetTestDefinitionJson()
+        {
+            //return Properties.Resources.ResourceManager.GetString("stored_definition");
+            return File.ReadAllText("stored-definition.json");
+        }
+
+        public static string GetTestDefinitionDynamicJson()
+        {
+            return File.ReadAllText("stored-dynamic-definition.json");
         }
     }
 }

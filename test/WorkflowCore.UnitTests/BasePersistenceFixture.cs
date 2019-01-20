@@ -15,7 +15,7 @@ namespace WorkflowCore.UnitTests
         protected abstract IPersistenceProvider Subject { get; }
 
         [Fact]
-        public void CreateNewWorkflow()
+        public void CreateNewWorkflow_should_generate_id()
         {
             var workflow = new WorkflowInstance()
             {
@@ -40,28 +40,33 @@ namespace WorkflowCore.UnitTests
         }
 
         [Fact]
-        public void GetWorkflowInstance()
+        public void GetWorkflowInstance_should_retrieve_workflow()
         {
             var workflow = new WorkflowInstance()
             {
-                Data = new { Value1 = 7 },
+                Data = new TestData() { Value1 = 7 },
                 Description = "My Description",
                 Status = WorkflowStatus.Runnable,
                 NextExecution = 0,
                 Version = 1,
-                WorkflowDefinitionId = "My Workflow"
+                WorkflowDefinitionId = "My Workflow",
+                Reference =  "My Reference"
             };
             workflow.ExecutionPointers.Add(new ExecutionPointer()
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = "1",
                 Active = true,
-                StepId = 0
+                StepId = 0,
+                SleepUntil = new DateTime(2000, 1, 1).ToUniversalTime(),
+                Scope = new List<string>() { "4", "3", "2", "1" }
             });
             var workflowId = Subject.CreateNewWorkflow(workflow).Result;
 
             var retrievedWorkflow = Subject.GetWorkflowInstance(workflowId).Result;
 
             retrievedWorkflow.ShouldBeEquivalentTo(workflow);
+            retrievedWorkflow.ExecutionPointers.FindById("1")
+                .Scope.Should().ContainInOrder(workflow.ExecutionPointers.FindById("1").Scope);
         }
 
         [Fact]
@@ -69,22 +74,26 @@ namespace WorkflowCore.UnitTests
         {
             var oldWorkflow = new WorkflowInstance()
             {
-                Data = new { Value1 = 7 },
+                Data = new TestData() { Value1 = 7 },
                 Description = "My Description",
                 Status = WorkflowStatus.Runnable,
                 NextExecution = 0,
                 Version = 1,
                 WorkflowDefinitionId = "My Workflow",
-                CreateTime = new DateTime(2000, 1, 1).ToUniversalTime()
+                CreateTime = new DateTime(2000, 1, 1).ToUniversalTime(),
+                Reference = "My Reference"
             };
             oldWorkflow.ExecutionPointers.Add(new ExecutionPointer()
             {
                 Id = Guid.NewGuid().ToString(),
                 Active = true,
-                StepId = 0
+                StepId = 0,
+                Scope = new List<string>() { "1", "2", "3", "4" }
             });
             var workflowId = Subject.CreateNewWorkflow(oldWorkflow).Result;
             var newWorkflow = Utils.DeepCopy(oldWorkflow);
+            newWorkflow.Data = oldWorkflow.Data;
+            newWorkflow.Reference = oldWorkflow.Reference;
             newWorkflow.NextExecution = 7;
             newWorkflow.ExecutionPointers.Add(new ExecutionPointer() { Id = Guid.NewGuid().ToString(), Active = true, StepId = 1 });
 
@@ -107,7 +116,7 @@ namespace WorkflowCore.UnitTests
                 {
                     var oldWorkflow = new WorkflowInstance()
                     {
-                        Data = new { Value1 = 7 },
+                        Data = new TestData() { Value1 = 7 },
                         Description = "My Description",
                         Status = WorkflowStatus.Runnable,
                         NextExecution = 0,
@@ -135,5 +144,10 @@ namespace WorkflowCore.UnitTests
                 action.ShouldNotThrow<InvalidOperationException>();
             });
         }
+    }
+
+    public class TestData
+    {
+        public int Value1 { get; set; }
     }
 }

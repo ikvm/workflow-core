@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using WorkflowCore.Interface;
 
 namespace WorkflowCore.Models
 {
@@ -19,6 +15,8 @@ namespace WorkflowCore.Models
         public int NextStep { get; set; }
 
         public string Label { get; set; }
+
+        public string Tag { get; set; }
 
         public object GetValue(object data)
         {

@@ -15,7 +15,6 @@ namespace WorkflowCore.Persistence.MongoDB.Services
 {
     public class MongoPersistenceProvider : IPersistenceProvider
     {
-
         private readonly IMongoDatabase _database;
 
         public MongoPersistenceProvider(IMongoDatabase database)
@@ -26,10 +25,6 @@ namespace WorkflowCore.Persistence.MongoDB.Services
 
         static MongoPersistenceProvider()
         {
-            //BsonSerializer.RegisterDiscriminatorConvention(typeof(WorkflowStep), new AssemblyQualifiedDiscriminatorConvention());
-            //BsonSerializer.RegisterDiscriminatorConvention(typeof(Expression), new AssemblyQualifiedDiscriminatorConvention());
-            //BsonSerializer.RegisterSerializer(new DataMappingSerializer());
-
             BsonClassMap.RegisterClassMap<WorkflowInstance>(x =>
             {                
                 x.MapIdProperty(y => y.Id)                    
@@ -69,15 +64,8 @@ namespace WorkflowCore.Persistence.MongoDB.Services
                 x.MapProperty(y => y.IsProcessed);
             });
 
-            //BsonClassMap.RegisterClassMap<ExecutionError>(x =>
-            //{
-            //    x.MapIdProperty(y => y.Id)
-            //        .SetIdGenerator(new StringObjectIdGenerator());
-            //    x.MapProperty(y => y.ErrorTime);
-            //    x.MapProperty(y => y.ExecutionPointerId);
-            //    x.MapProperty(y => y.Message);
-            //    x.MapProperty(y => y.WorkflowId);
-            //});
+            BsonClassMap.RegisterClassMap<ControlPersistenceData>(x => x.AutoMap());
+            BsonClassMap.RegisterClassMap<SchedulePersistenceData>(x => x.AutoMap());
         }
 
         static bool indexesCreated = false;
